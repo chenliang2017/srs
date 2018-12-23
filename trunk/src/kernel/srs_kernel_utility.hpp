@@ -79,6 +79,10 @@ extern std::string srs_string_trim_end(std::string str, std::string trim_chars);
 extern std::string srs_string_trim_start(std::string str, std::string trim_chars);
 // remove char in remove_chars of str
 extern std::string srs_string_remove(std::string str, std::string remove_chars);
+// remove first substring from str
+extern std::string srs_erase_first_substr(std::string str, std::string erase_string);
+// remove last substring from str
+extern std::string srs_erase_last_substr(std::string str, std::string erase_string);
 // whether string end with
 extern bool srs_string_ends_with(std::string str, std::string flag);
 extern bool srs_string_ends_with(std::string str, std::string flag0, std::string flag1);
@@ -147,27 +151,8 @@ extern uint32_t srs_crc32_ieee(const void* buf, int size, uint32_t previous = 0)
 
 /**
  * Decode a base64-encoded string.
- *
- * @param out      buffer for decoded data
- * @param in       null-terminated input string
- * @param out_size size in bytes of the out buffer, must be at
- *                 least 3/4 of the length of in
- * @return         number of bytes written, or a negative value in case of
- *                 invalid input
  */
-extern int srs_av_base64_decode(uint8_t* out, const char* in, int out_size);
-
-/**
- * Encode data to base64 and null-terminate.
- *
- * @param out      buffer for encoded data
- * @param out_size size in bytes of the out buffer (including the
- *                 null terminator), must be at least AV_BASE64_SIZE(in_size)
- * @param in       input buffer containing the data to encode
- * @param in_size  size in bytes of the in buffer
- * @return         out or NULL in case of error
- */
-extern char* srs_av_base64_encode(char* out, int out_size, const uint8_t* in, int in_size);
+extern srs_error_t srs_av_base64_decode(std::string cipher, std::string& plaintext);
 
 /**
  * Calculate the output size needed to base64-encode x bytes to a
@@ -180,7 +165,12 @@ extern char* srs_av_base64_encode(char* out, int out_size, const uint8_t* in, in
  * for example, p=config='139056E5A0'
  * output hex to data={0x13, 0x90, 0x56, 0xe5, 0xa0}
  */
-extern int ff_hex_to_data(uint8_t* data, const char* p);
+extern int srs_hex_to_data(uint8_t* data, const char* p, int size);
+
+/**
+ * convert data string to hex.
+ */
+extern char *srs_data_to_hex(char *des, const uint8_t *src, int len);
 
 /**
  * generate the c0 chunk header for msg.

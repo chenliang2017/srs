@@ -171,7 +171,6 @@ srs_error_t SrsBufferListener::on_tcp_client(srs_netfd_t stfd)
     return srs_success;
 }
 
-#ifdef SRS_AUTO_STREAM_CASTER
 SrsRtspListener::SrsRtspListener(SrsServer* svr, SrsListenerType t, SrsConfDirective* c) : SrsListener(svr, t)
 {
     listener = NULL;
@@ -281,7 +280,6 @@ srs_error_t SrsHttpFlvListener::on_tcp_client(srs_netfd_t stfd)
     
     return err;
 }
-#endif
 
 SrsUdpStreamListener::SrsUdpStreamListener(SrsServer* svr, SrsListenerType t, ISrsUdpHandler* c) : SrsListener(svr, t)
 {
@@ -323,7 +321,6 @@ srs_error_t SrsUdpStreamListener::listen(string i, int p)
     return err;
 }
 
-#ifdef SRS_AUTO_STREAM_CASTER
 SrsUdpCasterListener::SrsUdpCasterListener(SrsServer* svr, SrsListenerType t, SrsConfDirective* c) : SrsUdpStreamListener(svr, t, NULL)
 {
     // the caller already ensure the type is ok,
@@ -338,7 +335,6 @@ SrsUdpCasterListener::~SrsUdpCasterListener()
 {
     srs_freep(caster);
 }
-#endif
 
 SrsSignalManager* SrsSignalManager::instance = NULL;
 
@@ -485,10 +481,7 @@ SrsServer::SrsServer()
     http_api_mux = new SrsHttpServeMux();
     http_server = new SrsHttpServer(this);
     http_heartbeat = new SrsHttpHeartbeat();
-    
-#ifdef SRS_AUTO_INGEST
     ingester = new SrsIngester();
-#endif
 }
 
 SrsServer::~SrsServer()
@@ -505,10 +498,7 @@ void SrsServer::destroy()
     srs_freep(http_api_mux);
     srs_freep(http_server);
     srs_freep(http_heartbeat);
-    
-#ifdef SRS_AUTO_INGEST
     srs_freep(ingester);
-#endif
     
     if (pid_fd > 0) {
         ::close(pid_fd);
@@ -653,6 +643,7 @@ srs_error_t SrsServer::acquire_pid_file()
     
     if (fcntl(fd, F_SETLK, &lock) == -1) {
         if(errno == EACCES || errno == EAGAIN) {
+            ::close(fd);
             srs_error("srs is already running!");
             return srs_error_new(ERROR_SYSTEM_PID_ALREADY_RUNNING, "srs is already running");
         }
@@ -809,11 +800,9 @@ srs_error_t SrsServer::ingest()
 {
     srs_error_t err = srs_success;
     
-#ifdef SRS_AUTO_INGEST
     if ((err = ingester->start()) != srs_success) {
         return srs_error_wrap(err, "ingest start");
     }
-#endif
     
     return err;
 }
@@ -902,7 +891,6 @@ srs_error_t SrsServer::do_cycle()
     // find the max loop
     int max = srs_max(0, SRS_SYS_TIME_RESOLUTION_MS_TIMES);
     
-#ifdef SRS_AUTO_STAT
     max = srs_max(max, SRS_SYS_RUSAGE_RESOLUTION_TIMES);
     max = srs_max(max, SRS_SYS_CPU_STAT_RESOLUTION_TIMES);
     max = srs_max(max, SRS_SYS_DISK_STAT_RESOLUTION_TIMES);
@@ -910,7 +898,6 @@ srs_error_t SrsServer::do_cycle()
     max = srs_max(max, SRS_SYS_PLATFORM_INFO_RESOLUTION_TIMES);
     max = srs_max(max, SRS_SYS_NETWORK_DEVICE_RESOLUTION_TIMES);
     max = srs_max(max, SRS_SYS_NETWORK_RTMP_SERVER_RESOLUTION_TIMES);
-#endif
     
     // for asprocess.
     bool asprocess = _srs_config->get_asprocess();
@@ -987,7 +974,6 @@ srs_error_t SrsServer::do_cycle()
                 srs_update_system_time_ms();
             }
             
-#ifdef SRS_AUTO_STAT
             if ((i % SRS_SYS_RUSAGE_RESOLUTION_TIMES) == 0) {
                 srs_info("update resource info, rss.");
                 srs_update_system_rusage();
@@ -1022,7 +1008,6 @@ srs_error_t SrsServer::do_cycle()
                     http_heartbeat->heartbeat();
                 }
             }
-#endif
             
             srs_info("server main thread loop");
         }
@@ -1107,7 +1092,6 @@ srs_error_t SrsServer::listen_stream_caster()
 {
     srs_error_t err = srs_success;
     
-#ifdef SRS_AUTO_STREAM_CASTER
     close_listeners(SrsListenerMpegTsOverUdp);
     
     std::vector<SrsConfDirective*>::iterator it;
@@ -1145,7 +1129,6 @@ srs_error_t SrsServer::listen_stream_caster()
             return srs_error_wrap(err, "listen at %d", port);
         }
     }
-#endif
     
     return err;
 }

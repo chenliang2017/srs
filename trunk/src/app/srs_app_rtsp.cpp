@@ -46,8 +46,6 @@ using namespace std;
 #include <srs_protocol_utility.hpp>
 #include <srs_protocol_format.hpp>
 
-#ifdef SRS_AUTO_STREAM_CASTER
-
 SrsRtpConn::SrsRtpConn(SrsRtspConn* r, int p, int sid)
 {
     rtsp = r;
@@ -661,7 +659,7 @@ srs_error_t SrsRtspConn::connect()
     }
     
     // publish.
-    if ((err = sdk->publish()) != srs_success) {
+    if ((err = sdk->publish(SRS_CONSTS_RTMP_PROTOCOL_CHUNK_SIZE)) != srs_success) {
         close();
         return srs_error_wrap(err, "publish %s failed", url.c_str());
     }
@@ -745,6 +743,4 @@ void SrsRtspCaster::remove(SrsRtspConn* conn)
     
     srs_freep(conn);
 }
-
-#endif
 

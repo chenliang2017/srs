@@ -39,8 +39,6 @@ using namespace std;
 #include <srs_kernel_buffer.hpp>
 #include <srs_kernel_codec.hpp>
 
-#ifdef SRS_AUTO_STREAM_CASTER
-
 #define SRS_RTSP_BUFFER 4096
 
 // get the status text of code.
@@ -537,8 +535,12 @@ srs_error_t SrsRtspSdp::parse_fmtp_attribute(string attr)
                 
                 char* tmp_sh = new char[item_value.length()];
                 SrsAutoFreeA(char, tmp_sh);
-                int nb_tmp_sh = ff_hex_to_data((uint8_t*)tmp_sh, item_value.c_str());
-                srs_assert(nb_tmp_sh > 0);
+                
+                int nb_tmp_sh = srs_hex_to_data((uint8_t*)tmp_sh, item_value.c_str(), item_value.length());
+                if (nb_tmp_sh <= 0) {
+                    return srs_error_new(ERROR_RTSP_AUDIO_CONFIG, "audio config");
+                }
+                
                 audio_sh.append(tmp_sh, nb_tmp_sh);
             }
         }
@@ -583,23 +585,16 @@ srs_error_t SrsRtspSdp::parse_control_attribute(string attr)
     return err;
 }
 
-string SrsRtspSdp::base64_decode(string value)
+string SrsRtspSdp::base64_decode(string cipher)
 {
-    if (value.empty()) {
+    if (cipher.empty()) {
         return "";
     }
     
-    int nb_output = (int)(value.length() * 2);
-    uint8_t* output = new uint8_t[nb_output];
-    SrsAutoFreeA(uint8_t, output);
+    string plaintext;
+    srs_error_t err = srs_av_base64_decode(cipher, plaintext);
+    srs_freep(err);
     
-    int ret = srs_av_base64_decode(output, (char*)value.c_str(), nb_output);
-    if (ret <= 0) {
-        return "";
-    }
-    
-    std::string plaintext;
-    plaintext.append((char*)output, ret);
     return plaintext;
 }
 
@@ -1104,8 +1099,6 @@ srs_error_t SrsRtspStack::recv_token(std::string& token, SrsRtspTokenState& stat
     
     return err;
 }
-
-#endif
 
 #endif
 

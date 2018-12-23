@@ -23,8 +23,6 @@
 
 #include <srs_app_caster_flv.hpp>
 
-#ifdef SRS_AUTO_STREAM_CASTER
-
 #include <algorithm>
 using namespace std;
 
@@ -202,7 +200,7 @@ srs_error_t SrsDynamicHttpConn::do_proxy(ISrsHttpResponseReader* rr, SrsFlvDecod
         return srs_error_wrap(err, "connect %s failed, cto=%" PRId64 ", sto=%" PRId64, output.c_str(), cto, sto);
     }
     
-    if ((err = sdk->publish()) != srs_success) {
+    if ((err = sdk->publish(SRS_CONSTS_RTMP_PROTOCOL_CHUNK_SIZE)) != srs_success) {
         return srs_error_wrap(err, "publish");
     }
     
@@ -324,4 +322,3 @@ srs_error_t SrsHttpFileReader::lseek(off_t offset, int whence, off_t* seeked)
     return srs_success;
 }
 
-#endif

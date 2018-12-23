@@ -36,9 +36,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <srs_rtmp_handshake.hpp>
 #include <srs_protocol_stream.hpp>
 
-#ifdef SRS_AUTO_SSL
 using namespace _srs_internal;
-#endif
 
 #include <srs_protocol_io.hpp>
 
@@ -86,6 +84,8 @@ public:
 public:
     MockBufferIO();
     virtual ~MockBufferIO();
+public:
+    virtual MockBufferIO* append(std::string data);
 // for protocol
 public:
     virtual bool is_never_timeout(int64_t tm);

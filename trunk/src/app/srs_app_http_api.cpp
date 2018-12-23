@@ -588,11 +588,7 @@ srs_error_t SrsGoApiFeatures::serve_http(ISrsHttpResponseWriter* w, ISrsHttpMess
     SrsJsonObject* features = SrsJsonAny::object();
     data->set("features", features);
     
-#ifdef SRS_AUTO_SSL
     features->set("ssl", SrsJsonAny::boolean(true));
-#else
-    features->set("ssl", SrsJsonAny::boolean(false));
-#endif
     features->set("hls", SrsJsonAny::boolean(true));
 #ifdef SRS_AUTO_HDS
     features->set("hds", SrsJsonAny::boolean(true));
@@ -603,21 +599,9 @@ srs_error_t SrsGoApiFeatures::serve_http(ISrsHttpResponseWriter* w, ISrsHttpMess
     features->set("api", SrsJsonAny::boolean(true));
     features->set("httpd", SrsJsonAny::boolean(true));
     features->set("dvr", SrsJsonAny::boolean(true));
-#ifdef SRS_AUTO_TRANSCODE
     features->set("transcode", SrsJsonAny::boolean(true));
-#else
-    features->set("transcode", SrsJsonAny::boolean(false));
-#endif
-#ifdef SRS_AUTO_INGEST
     features->set("ingest", SrsJsonAny::boolean(true));
-#else
-    features->set("ingest", SrsJsonAny::boolean(false));
-#endif
-#ifdef SRS_AUTO_STAT
     features->set("stat", SrsJsonAny::boolean(true));
-#else
-    features->set("stat", SrsJsonAny::boolean(false));
-#endif
 #ifdef SRS_AUTO_NGINX
     features->set("nginx", SrsJsonAny::boolean(true));
 #else
@@ -628,11 +612,7 @@ srs_error_t SrsGoApiFeatures::serve_http(ISrsHttpResponseWriter* w, ISrsHttpMess
 #else
     features->set("ffmpeg", SrsJsonAny::boolean(false));
 #endif
-#ifdef SRS_AUTO_STREAM_CASTER
     features->set("caster", SrsJsonAny::boolean(true));
-#else
-    features->set("caster", SrsJsonAny::boolean(false));
-#endif
 #ifdef SRS_PERF_COMPLEX_SEND
     features->set("complex_send", SrsJsonAny::boolean(true));
 #else
@@ -1404,15 +1384,18 @@ srs_error_t SrsHttpApi::do_cycle()
         ISrsHttpMessage* req = NULL;
         
         // get a http message
-        if ((err = parser->parse_message(skt, this, &req)) != srs_success) {
+        if ((err = parser->parse_message(skt, &req)) != srs_success) {
             return srs_error_wrap(err, "parse message");
         }
         
         // if SUCCESS, always NOT-NULL.
-        srs_assert(req);
-        
         // always free it in this scope.
+        srs_assert(req);
         SrsAutoFree(ISrsHttpMessage, req);
+        
+        // Attach owner connection to message.
+        SrsHttpMessage* hreq = (SrsHttpMessage*)req;
+        hreq->set_connection(this);
         
         // ok, handle http request.
         SrsHttpResponseWriter writer(skt);
